@@ -21,7 +21,9 @@ NEWFILE="$BASEFILE.new"
 main() {
   jq  ".os.udevRules.\"70\" = \"$RULE\"" "$BASEFILE" > "$NEWFILE"
   if [ "$(jq -e ".os.udevRules.\"70\"" "$NEWFILE")" != "" ] ; then
+    systemctl stop resin-supervisor || true
     mv "$NEWFILE" "$BASEFILE"
+    systemctl restart resin-supervisor
     echo "DONE"
   else
     echo "FAIL: ssh key not found in transitory file $BASEFILE"
