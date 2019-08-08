@@ -7,7 +7,7 @@ set -o errexit -o pipefail
 source /etc/profile
 
 # Edit this to add your udev rule:
-# cat rulefilename | jq -sR . and replace the outside the outside double quotes " with single quotes '
+# `jq -sR . < rulefilename` and replace the outside the outside double quotes " with single quotes '
 RULE=''
 
 if [ -z "$RULE" ]; then
