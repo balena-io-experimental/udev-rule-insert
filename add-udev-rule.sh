@@ -10,9 +10,21 @@ source /etc/profile
 # `jq -sR . < rulefilename` and replace the outside the outside double quotes " with single quotes '
 RULE=''
 
+# Finish up the script
+# If message passed as an argument, that means failure.
+finish_up() {
+  local message=$1
+  if [ -n "${message}" ]; then
+    echo "FAIL: ${message}"
+    exit 1
+  else
+    echo "DONE"
+    exit 0
+  fi
+}
+
 if [ -z "$RULE" ]; then
-  echo "FAIL: No RULE set to be inserted"
-  exit 1
+  finish_up "No RULE set to be inserted"
 fi
 
 BASEFILE="/mnt/boot/config.json"
@@ -23,13 +35,16 @@ main() {
   if [ "$(jq -e ".os.udevRules.\"70\"" "$NEWFILE")" != "" ] ; then
     systemctl stop resin-supervisor || true
     mv "$NEWFILE" "$BASEFILE"
-    systemctl restart resin-supervisor
-    echo "DONE"
+    systemctl restart resin-supervisor || finish_up "Supervisor did not restart successfully."
+    echo "Restarting os-udevrules service if exists."
+    if systemctl is-active --quiet os-udevrules ; then
+       # Only run this if there's a relevant service
+       systemctl restart os-udevrules || finish_up "udev rules service did not restart successfully."
+    fi
   else
-    echo "FAIL: ssh key not found in transitory file $BASEFILE"
-    exit 1
+    finish_up "udev rule not found in transitory file $BASEFILE"
   fi
 }
 
 main
-exit 0
+finish_up
